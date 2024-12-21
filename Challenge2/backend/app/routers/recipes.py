@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List
-from .. import models
-from ..database import get_db
-from ..utils.recipe_parser import parse_recipe_text, parse_recipe_image
+import models
+from database import get_db
+from utils.recipe_parser import parse_recipe_text, parse_recipe_image
 from pydantic import BaseModel
 
-router = APIRouter()
+router = APIRouter(
+)
 
 class RecipeBase(BaseModel):
     name: str
@@ -25,7 +26,7 @@ class Recipe(RecipeBase):
     class Config:
         orm_mode = True
 
-@router.post("/", response_model=Recipe)
+@router.post("/recepies", response_model=Recipe)
 def create_recipe(recipe: RecipeCreate, db: Session = Depends(get_db)):
     db_recipe = models.Recipe(**recipe.dict())
     db.add(db_recipe)
@@ -33,7 +34,7 @@ def create_recipe(recipe: RecipeCreate, db: Session = Depends(get_db)):
     db.refresh(db_recipe)
     return db_recipe
 
-@router.post("/upload")
+@router.post("/recepies/upload")
 async def upload_recipe(file: UploadFile = File(...)):
     if file.content_type.startswith('image/'):
         recipe_text = await parse_recipe_image(file)
@@ -45,7 +46,7 @@ async def upload_recipe(file: UploadFile = File(...)):
     
     return {"message": "Recipe added successfully"}
 
-@router.get("/suggest")
+@router.get("/recepies/suggest")
 def suggest_recipes(db: Session = Depends(get_db)):
     available_ingredients = db.query(models.Ingredient).all()
     ingredient_names = [ing.name for ing in available_ingredients]
@@ -54,7 +55,6 @@ def suggest_recipes(db: Session = Depends(get_db)):
     suitable_recipes = []
     
     for recipe in recipes:
-        # Simple matching logic - can be improved
         recipe_ingredients = recipe.instructions.lower()
         if all(ing.lower() in recipe_ingredients for ing in ingredient_names):
             suitable_recipes.append(recipe)

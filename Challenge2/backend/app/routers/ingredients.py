@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from .. import models
-from ..database import get_db
+import models
+from database import get_db
 from pydantic import BaseModel
 
-router = APIRouter()
+router = APIRouter(
+)
 
 class IngredientBase(BaseModel):
     name: str
@@ -21,7 +22,7 @@ class Ingredient(IngredientBase):
     class Config:
         orm_mode = True
 
-@router.post("/", response_model=Ingredient)
+@router.post("/ingredients", response_model=Ingredient)
 def create_ingredient(ingredient: IngredientCreate, db: Session = Depends(get_db)):
     db_ingredient = models.Ingredient(**ingredient.dict())
     db.add(db_ingredient)
@@ -29,12 +30,12 @@ def create_ingredient(ingredient: IngredientCreate, db: Session = Depends(get_db
     db.refresh(db_ingredient)
     return db_ingredient
 
-@router.get("/", response_model=List[Ingredient])
+@router.get("/ingredients", response_model=List[Ingredient])
 def read_ingredients(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     ingredients = db.query(models.Ingredient).offset(skip).limit(limit).all()
     return ingredients
 
-@router.put("/{ingredient_id}", response_model=Ingredient)
+@router.put("/ingredients/{ingredient_id}", response_model=Ingredient)
 def update_ingredient(ingredient_id: int, ingredient: IngredientCreate, db: Session = Depends(get_db)):
     db_ingredient = db.query(models.Ingredient).filter(models.Ingredient.id == ingredient_id).first()
     if not db_ingredient:
@@ -47,7 +48,7 @@ def update_ingredient(ingredient_id: int, ingredient: IngredientCreate, db: Sess
     db.refresh(db_ingredient)
     return db_ingredient
 
-@router.delete("/{ingredient_id}")
+@router.delete("/ingredients/{ingredient_id}")
 def delete_ingredient(ingredient_id: int, db: Session = Depends(get_db)):
     db_ingredient = db.query(models.Ingredient).filter(models.Ingredient.id == ingredient_id).first()
     if not db_ingredient:
